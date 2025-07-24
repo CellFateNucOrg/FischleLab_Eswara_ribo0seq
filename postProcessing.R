@@ -9,6 +9,7 @@ library(ggrepel)
 library(rstatix)
 library(htmlwidgets)
 library(RColorBrewer)
+library(ComplexHeatmap)
 
 
 theme_set(
@@ -81,10 +82,12 @@ annotate_results(gtf,pattern="\\.deseq2\\.results\\.tsv")
 
 results<-combine_results(pattern="\\.deseq2\\.results_annotated\\.tsv")
 results$seqnames<- factor(results$seqnames, levels=c("I", "II", "III", "IV", "V", "X", "MtDNA"))
+results$shortId<-results$group
 contrasts$shortId<- gsub("_","",contrasts$id)
+#idx<-match(results$group,contrasts$shortId)
+#results$contrast<-contrasts$id[idx]
+results$shortId<-factor(results$group, levels=contrasts$shortId)
 results$group<-factor(results$group, levels=contrasts$shortId, labels=contrasts$id)
-idx<-match(results$group,contrasts$shortId)
-results$contrast<-contrasts$id[idx]
 
 if (file.exists(paste0("./custom/rds/",prefix,".results_annotated.RDS"))) {
   response <- readline(prompt = paste(prefix, "file already exists. Overwrite? [y/n]: "))
@@ -333,5 +336,69 @@ ggsave(filename = paste0("./custom/plots/byChrRegion/countsByChrRegion_",
        plot = p, width = 10, height = 8, dpi = 300,bg="white")
 
 
+## Heatmap of significant genes -----
+results<-readRDS(paste0("./custom/rds/",prefix,".results_annotated.RDS"))
+dir.create("./custom/plots/heatmaps", showWarnings = FALSE, recursive = TRUE)
+n2contrasts<-grep("vs_N2$",levels(results$group),value=T)
+lin61contrasts<-grep("vs_HPL2GFP__lin61$",levels(results$group),value=T)
+
+res_n2<-results[results$group %in% n2contrasts,]
+res_lin61<-results[results$group %in% lin61contrasts,]
+
+gatherResults<-function(results, valueColumn, nameColumn="group"){
+  results[,nameColumn]<-droplevels(results[,nameColumn])
+  for(c in levels(results[,nameColumn])){
+    tmp<-results[results[,nameColumn]==c,c("gene_id",valueColumn)]
+    colnames(tmp)[2]<-paste0(valueColumn,"_",c)
+    if(!exists("gathered")){
+      gathered<-tmp
+    } else {
+      gathered<-merge(gathered,tmp,by="gene_id",all=T)
+    }
+  }
+  return(gathered)
+}
 
 
+getLFCmat<-function(results, numSamplesSignificant=1){
+  mat_padj<-gatherResults(results,valueColumn="padj")
+  mat_padj[is.na(mat_padj)]<-1
+  sigGenes<-mat_padj$gene_id[rowSums(mat_padj[,2:ncol(mat_padj)]<0.05)>numSamplesSignificant]
+  mat_lfc<-gatherResults(results,valueColumn="log2FoldChange")
+  mat_lfc<-mat_lfc[mat_lfc$gene_id %in% sigGenes,]
+  rownames(mat_lfc)<-mat_lfc$gene_id
+  mat_lfc<-mat_lfc[,2:ncol(mat_lfc)]
+  mat_lfc<-as.matrix(mat_lfc)
+  colnames(mat_lfc)<-gsub("log2FoldChange_","",colnames(mat_lfc))
+  return(mat_lfc)
+}
+
+
+numSamplesSignificant=3
+mat_lfc<-getLFCmat(res_n2,numSamplesSignificant=numSamplesSignificant)
+
+png(paste0("./custom/plots/heatmaps/hclust_heatmap_sigSamples",numSamplesSignificant,"_n2Contrasts.png"),width=19,height=29,units="cm",res=150)
+ht<-Heatmap(mat_lfc,show_row_names=F, cluster_columns=T, cluster_rows=T, show_row_dend = F,
+            column_names_rot=75,column_title=paste0("log2FC of ",nrow(mat_lfc)," genes singificant in >=",numSamplesSignificant," samples"))
+ht<-draw(ht)
+dev.off()
+
+
+mat_lfc<-getLFCmat(res_lin61,numSamplesSignificant=numSamplesSignificant)
+
+png(paste0("./custom/plots/heatmaps/hclust_heatmap_sigSamples",numSamplesSignificant,"_lin61Contrasts.png"),width=19,height=29,units="cm",res=150)
+ht<-Heatmap(mat_lfc,show_row_names=F, cluster_columns=T, cluster_rows=T, show_row_dend = F,
+            column_names_rot=75,column_title=paste0("log2FC of ",nrow(mat_lfc)," genes singificant in >=",numSamplesSignificant," samples"))
+ht<-draw(ht)
+dev.off()
+
+
+
+numSamplesSignificant=1
+mat_lfc<-getLFCmat(results,numSamplesSignificant=numSamplesSignificant)
+
+png(paste0("./custom/plots/heatmaps/hclust_heatmap_sigSamples",numSamplesSignificant,"_allContrasts.png"),width=19,height=29,units="cm",res=150)
+ht<-Heatmap(mat_lfc,show_row_names=F, cluster_columns=T, cluster_rows=T, show_row_dend = F,
+            column_names_rot=90,column_title=paste0("log2FC of ",nrow(mat_lfc)," genes singificant in >=",numSamplesSignificant," samples"))
+ht<-draw(ht)
+dev.off()
