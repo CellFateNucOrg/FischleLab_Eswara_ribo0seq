@@ -22,10 +22,12 @@ theme_set(
     )
 )
 
+serverPath=workDir="/Volumes/external.data/MeisterLab"
+#serverPath=workDir="Z:/MeisterLab"
 
 ### functions ------
-annotate_results <- function(gtf,pattern="\\.deseq2\\.results\\.tsv",prefix=""){
-  fileList<-list.files("./tables/differential",pattern=pattern, full.names=T)
+annotate_results <- function(gtf, pattern="\\.deseq2\\.results\\.tsv", path=".", prefix=""){
+  fileList<-list.files(paste0(path,"/tables/differential"),pattern=pattern, full.names=T)
   for(f in fileList){
     print(f)
     df <- read.delim(f, header=T)
@@ -38,14 +40,14 @@ annotate_results <- function(gtf,pattern="\\.deseq2\\.results\\.tsv",prefix=""){
     print(group_name)
     df <- inner_join(df, data.frame(gtf), by=c("gene_id" = "gene_id"))
     df$group <- group_name
-    write.table(df, paste0("./custom/txt/",file_name, ".deseq2.results_annotated.tsv"),
+    write.table(df, paste0(path,"/custom/txt/",file_name, ".deseq2.results_annotated.tsv"),
                 row.names=F, quote=F, sep="\t", col.names=T)
   }
 }
 
 
-combine_results <- function(pattern="\\.deseq2\\.results_annotated\\.tsv"){
-  fileList <- list.files("./custom/txt/", pattern=pattern, full.names=T)
+combine_results <- function(pattern="\\.deseq2\\.results_annotated\\.tsv",path="."){
+  fileList <- list.files(paste0(path,"/custom/txt/"), pattern=pattern, full.names=T)
   results <- do.call(rbind, lapply(fileList, read.delim, header=T))
   return(results)
 }
@@ -64,23 +66,29 @@ tableToGranges<-function(results,sort=TRUE){
 }
 
 #-----------------
-contrasts<-read.csv("./contrasts.csv",sep=",",header=T)
+workDir=paste0(serverPath,"/FischleLab_KarthikEswara/ribo0seq")
+
+runName="/diff_abund_2_canonical_noRRnoSP"
+contrasts<-read.csv(paste0(workDir,"/contrasts.csv"),sep=",",header=T)
 prefix="ribo0_canonical_geneset_all"
-setwd("/Volumes/external.data/MeisterLab/FischleLab_KarthikEswara/ribo0seq")
-dir.create("custom/plots", showWarnings = FALSE, recursive = TRUE)
-dir.create("custom/rds", showWarnings = FALSE, recursive = TRUE)
-dir.create("custom/txt", showWarnings = FALSE, recursive = TRUE)
+setwd(workDir)
+dir.create(paste0(workDir,runName,"/custom/plots"), showWarnings = FALSE, recursive = TRUE)
+dir.create(paste0(workDir,runName,"/custom/rds"), showWarnings = FALSE, recursive = TRUE)
+dir.create(paste0(workDir,runName,"/custom/txt"), showWarnings = FALSE, recursive = TRUE)
 genomeVer<-"WS295"
-gtf<-import(paste0("/Volumes/MeisterLab/publicData/genomes/",genomeVer,"/c_elegans.PRJNA13758.",genomeVer,".canonical_geneset.gtf"))
-#gtf<-import("Z:/MeisterLab/publicData/genomes/WS295/c_elegans.PRJNA13758.WS295.canonical_geneset.gtf")
+gtf<-import(paste0(serverPath,"/publicData/genomes/",genomeVer,"/c_elegans.PRJNA13758.",genomeVer,".canonical_geneset.gtf"))
 gtf <- gtf[gtf$type == "gene"]
 mcols(gtf)<-mcols(gtf)[c("source","type","gene_id","gene_biotype","gene_name")]
 gtf$source<-genomeVer
 gtf<-sort(gtf)
 
-annotate_results(gtf,pattern="\\.deseq2\\.results\\.tsv")
 
-results<-combine_results(pattern="\\.deseq2\\.results_annotated\\.tsv")
+
+## annotate results tables -----
+
+annotate_results(gtf,path=paste0(workDir,runName),pattern="\\.deseq2\\.results\\.tsv")
+
+results<-combine_results(path=paste0(workDir,runName),pattern="\\.deseq2\\.results_annotated\\.tsv")
 results$seqnames<- factor(results$seqnames, levels=c("I", "II", "III", "IV", "V", "X", "MtDNA"))
 results$shortId<-results$group
 contrasts$shortId<- gsub("_","",contrasts$id)
@@ -89,15 +97,15 @@ contrasts$shortId<- gsub("_","",contrasts$id)
 results$shortId<-factor(results$group, levels=contrasts$shortId)
 results$group<-factor(results$group, levels=contrasts$shortId, labels=contrasts$id)
 
-if (file.exists(paste0("./custom/rds/",prefix,".results_annotated.RDS"))) {
+if (file.exists(paste0(workDir,runName,"/custom/rds/",prefix,".results_annotated.RDS"))) {
   response <- readline(prompt = paste(prefix, "file already exists. Overwrite? [y/n]: "))
   if (tolower(response) == "y") {
-    saveRDS(results, paste0("custom/rds/",prefix,".results_annotated.RDS"))
+    saveRDS(results, paste0(workDir,runName,"/custom/rds/",prefix,".results_annotated.RDS"))
   } else {
     print("file not overwritten")
   }
 } else {
-  saveRDS(results, paste0("custom/rds/",prefix,".results_annotated.RDS"))
+  saveRDS(results, paste0(workDir,runName,"/custom/rds/",prefix,".results_annotated.RDS"))
 }
 
 
@@ -106,7 +114,7 @@ if (file.exists(paste0("./custom/rds/",prefix,".results_annotated.RDS"))) {
 #contrasts<-read.csv("./contrasts.csv",sep=",",header=T)
 # make table of up vs down
 LFCthresholds<-c(0,0.5,1,1.5,2)
-workDir<-"/Volumes/external.data/MeisterLab/FischleLab_KarthikEswara/ribo0seq/"
+#workDir<-"/Volumes/external.data/MeisterLab/FischleLab_KarthikEswara/ribo0seq/"
 #tables<-list.files(path=paste0(workDir,"tables/differential"),pattern=".*deseq2\\.results\\.tsv")
 contrastNames<-contrasts$id
 tbl<-list()
@@ -114,7 +122,7 @@ for(LFCthresh in LFCthresholds){
   updown<-NULL
   for (c in contrastNames){
     #sample<-gsub("\\.deseq2\\.results\\.tsv","",t)
-    df<-read.delim(paste0(workDir,"tables/differential/",c,".deseq2.results.tsv"),header=T,stringsAsFactors=F)
+    df<-read.delim(paste0(workDir,runName,"/tables/differential/",c,".deseq2.results.tsv"),header=T,stringsAsFactors=F)
     df$padj[is.na(df$padj)]<-0 # set NA to 1
     tmp<-data.frame(sample=c,
                      up=sum(df$padj<0.05 & df$log2FoldChange>LFCthresh),
@@ -128,7 +136,7 @@ for(LFCthresh in LFCthresholds){
   tbl[[as.character(LFCthresh)]]<-updown
 }
 
-sink("./custom/txt/summaryUpDownDiffThresholds.txt")
+sink(paste0(workDir,runName,"/custom/txt/summaryUpDownDiffThresholds.txt"))
 for (t in 1:length(tbl)) {
   print(paste("padj <0.05 & LFC Threshold:", names(tbl)[t]))
   print(tbl[[t]])
@@ -137,9 +145,9 @@ for (t in 1:length(tbl)) {
 sink()
 
 ## interactive Volcano plots -------
-results<-readRDS(paste0("custom/rds/",prefix,".results_annotated.RDS"))
-dir.create("./custom/plots/volcano", showWarnings = FALSE, recursive = TRUE)
-rockman<-readRDS("/Volumes/external.data/MeisterLab/publicData/Various/chrRegions_Rockman2009.RDS")
+results<-readRDS(paste0(workDir,runName,"/custom/rds/",prefix,".results_annotated.RDS"))
+dir.create(paste0(workDir,runName,"/custom/plots/volcano"), showWarnings = FALSE, recursive = TRUE)
+rockman<-readRDS(paste0(serverPath,"/publicData/Various/chrRegions_Rockman2009.RDS"))
 gr<-tableToGranges(results,sort=FALSE)
 seqlevelsStyle(gr)<-"UCSC"
 ol<-findOverlaps(resize(gr,width=1,fix="start"),rockman,ignore.strand=T)
@@ -153,7 +161,7 @@ padjVal=0.05
 
 # free scale
 for(i in 1:length(contrasts$id)){
-  tmp<-res[res$group==contrasts$shortId[i],c("padj","log2FoldChange","gene_name","gene_biotype","chrRegion","chrRegionType")]
+  tmp<-res[res$shortId==contrasts$shortId[i],c("padj","log2FoldChange","gene_name","gene_biotype","chrRegion","chrRegionType")]
   tmp$mlog10padj<--log10(tmp$padj)
   tmp$significant<-"NS"
   tmp$significant[tmp$log2FoldChange>lfcVal & tmp$padj<padjVal]<- "Up"
@@ -185,16 +193,16 @@ for(i in 1:length(contrasts$id)){
     force = 0.5, force_pull=1
   )
   volcano_plot1
-  ggsave(filename = paste0("./custom/plots/volcano/volcano_",contrasts$id[i],"_free.png"),
+  ggsave(filename = paste0(workDir,runName,"/custom/plots/volcano/volcano_",contrasts$id[i],"_free.png"),
          plot = volcano_plot1, width = 8, height = 6, dpi = 300,bg="white")
   volcano_plot
   interactive_volcano <- ggplotly(volcano_plot,tooltip="text")
-  saveWidget(interactive_volcano, file = paste0("./custom/plots/volcano/volcano_",contrasts$id[i],"_free.html"))
+  saveWidget(interactive_volcano, file = paste0(workDir,runName,"/custom/plots/volcano/volcano_",contrasts$id[i],"_free.html"))
 }
 
 # zoom LFC -5 to 5
 for(i in 1:length(contrasts$id)){
-  tmp<-res[res$group==contrasts$shortId[i],c("padj","log2FoldChange","gene_name","gene_biotype","chrRegion","chrRegionType")]
+  tmp<-res[res$shortId==contrasts$shortId[i],c("padj","log2FoldChange","gene_name","gene_biotype","chrRegion","chrRegionType")]
   tmp$mlog10padj<--log10(tmp$padj)
   tmp$significant<-"NS"
   tmp$significant[tmp$log2FoldChange>lfcVal & tmp$padj<padjVal]<- "Up"
@@ -227,21 +235,24 @@ for(i in 1:length(contrasts$id)){
     force = 0.5, force_pull=1
   )
   volcano_plot1
-  ggsave(filename = paste0("./custom/plots/volcano/volcano_",contrasts$id[i],"_-5to5.png"),
+  ggsave(filename = paste0(workDir,runName,"/custom/plots/volcano/volcano_",contrasts$id[i],"_-5to5.png"),
          plot = volcano_plot1, width = 8, height = 6, dpi = 300,bg="white")
   volcano_plot
   interactive_volcano <- ggplotly(volcano_plot,tooltip="text")
-  saveWidget(interactive_volcano, file = paste0("./custom/plots/volcano/volcano_",contrasts$id[i],"_-5to5.html"))
+  saveWidget(interactive_volcano, file = paste0(workDir, runName,"/custom/plots/volcano/volcano_",contrasts$id[i],"_-5to5.html"))
 }
 
 
 ## Up down by chromosome  -----
-dir.create("./custom/plots/byChromosome", showWarnings = FALSE, recursive = TRUE)
+lfcVal=1
+padjVal=0.05
+
+
+dir.create(paste0(workDir, runName, "/custom/plots/byChromosome"), showWarnings = FALSE, recursive = TRUE)
 nuclear<-seqlevels(Celegans)[1:6]
 resA<-res[res$seqnames %in% nuclear,]
 resA$padj[is.na(resA$padj)]<-1
-padjVal=0.05
-lfcVal=0.5
+
 resA<-resA[resA$padj<padjVal & abs(resA$log2FoldChange)>lfcVal,]
 obsCounts<-data.frame(resA) %>% group_by(group,seqnames) %>%
   summarize(count = n())
@@ -260,7 +271,7 @@ p<-ggplot(resA,aes(x=seqnames,y=log2FoldChange)) +
   ggtitle(paste0("Log2FoldChange for significant genes (padj<",padjVal," |LFC|>",lfcVal,")"))+
   theme(legend.position = "none")
 p
-ggsave(filename = paste0("./custom/plots/byChromosome/lfcByChr_",
+ggsave(filename = paste0(workDir, runName, "/custom/plots/byChromosome/lfcByChr_",
                          contrasts$id[i], "_padj",padjVal,"_lfc",lfcVal,".png"),
        plot = p, width = 11, height = 8, dpi = 300,bg="white")
 
@@ -280,7 +291,7 @@ p<-ggplot(resA,aes(x=seqnames,fill=upVdown)) +
   ggtitle(paste0("Fraction of up/down significant genes (padj<",padjVal," |LFC|>",lfcVal,")"))+
   scale_fill_brewer(palette = "Accent")
 p
-ggsave(filename = paste0("./custom/plots/byChromosome/countsByChr_",
+ggsave(filename = paste0(workDir, runName, "/custom/plots/byChromosome/countsByChr_",
                          contrasts$id[i],"_padj",padjVal,"_lfc",lfcVal,".png"),
        plot = p, width = 11, height = 8, dpi = 300,bg="white")
 
@@ -288,13 +299,12 @@ ggsave(filename = paste0("./custom/plots/byChromosome/countsByChr_",
 
 
 ## Up down chromosome regions -----
-dir.create("./custom/plots/byChrRegion", showWarnings = FALSE, recursive = TRUE)
+dir.create(paste0(workDir, runName,"/custom/plots/byChrRegion"), showWarnings = FALSE, recursive = TRUE)
 autosomes<-seqlevels(Celegans)[1:5]
 resA<-res[res$seqnames %in% autosomes,]
 resA$padj[is.na(resA$padj)]<-1
 resA$chrRegionType<-factor(resA$chrRegionType, levels=c("tip","arm","center"))
-padjVal=0.05
-lfcVal=0
+
 resA<-resA[resA$padj<padjVal & abs(resA$log2FoldChange)>lfcVal,]
 obsCounts<-data.frame(resA) %>% group_by(group,chrRegionType) %>%
   summarize(count = n())
@@ -311,7 +321,7 @@ p<-ggplot(resA,aes(x=chrRegionType,y=log2FoldChange)) +
   stat_pvalue_manual(data=wilcoxt,label="p.adj.signif",y.position=ylimits[2]*0.95,
                      remove.bracket = T,angle=0,hide.ns=T) +
   ggtitle(paste0("Log2FoldChange for significant autosomal genes (padj<",padjVal," |LFC|>",lfcVal,")"))
-ggsave(filename = paste0("./custom/plots/byChrRegion/lfcByChrRegion_",
+ggsave(filename = paste0(workDir, runName, "/custom/plots/byChrRegion/lfcByChrRegion_",
                          contrasts$id[i], "_padj",padjVal,"_lfc",lfcVal,".png"),
        plot = p, width = 11, height = 8, dpi = 300,bg="white")
 
@@ -331,14 +341,17 @@ p<-ggplot(resA,aes(x=chrRegionType,fill=upVdown)) +
   ggtitle(paste0("Fraction of up/down significant autosomal genes (padj<",padjVal," |LFC|>",lfcVal,")"))+
   scale_fill_brewer(palette = "Accent")
 
-ggsave(filename = paste0("./custom/plots/byChrRegion/countsByChrRegion_",
+ggsave(filename = paste0(workDir, runName, "/custom/plots/byChrRegion/countsByChrRegion_",
                          contrasts$id[i],"_padj",padjVal,"_lfc",lfcVal,".png"),
        plot = p, width = 10, height = 8, dpi = 300,bg="white")
 
 
+
+
+
 ## Heatmap of significant genes -----
-results<-readRDS(paste0("./custom/rds/",prefix,".results_annotated.RDS"))
-dir.create("./custom/plots/heatmaps", showWarnings = FALSE, recursive = TRUE)
+results<-readRDS(paste0(workDir,runName,"/custom/rds/",prefix,".results_annotated.RDS"))
+dir.create(paste0(workDir, runName, "/custom/plots/heatmaps"), showWarnings = FALSE, recursive = TRUE)
 n2contrasts<-grep("vs_N2$",levels(results$group),value=T)
 lin61contrasts<-grep("vs_HPL2GFP__lin61$",levels(results$group),value=T)
 
@@ -360,11 +373,14 @@ gatherResults<-function(results, valueColumn, nameColumn="group"){
 }
 
 
-getLFCmat<-function(results, numSamplesSignificant=1){
+getLFCmat<-function(results, numSamplesSignificant=1, lfcVal=0, padjVal=0.05){
   mat_padj<-gatherResults(results,valueColumn="padj")
   mat_padj[is.na(mat_padj)]<-1
-  sigGenes<-mat_padj$gene_id[rowSums(mat_padj[,2:ncol(mat_padj)]<0.05)>numSamplesSignificant]
   mat_lfc<-gatherResults(results,valueColumn="log2FoldChange")
+
+  sig<-(mat_padj[,2:ncol(mat_padj)]<padjVal & abs(mat_lfc[,2:ncol(mat_lfc)])>lfcVal)
+  sigGenes<-mat_padj$gene_id[rowSums(sig)>numSamplesSignificant]
+
   mat_lfc<-mat_lfc[mat_lfc$gene_id %in% sigGenes,]
   rownames(mat_lfc)<-mat_lfc$gene_id
   mat_lfc<-mat_lfc[,2:ncol(mat_lfc)]
@@ -374,31 +390,51 @@ getLFCmat<-function(results, numSamplesSignificant=1){
 }
 
 
+
+
 numSamplesSignificant=3
-mat_lfc<-getLFCmat(res_n2,numSamplesSignificant=numSamplesSignificant)
+lfcVal=1
+padjVal=0.05
+mat_lfc<-getLFCmat(res_n2,numSamplesSignificant, lfcVal, padjVal)
 
-png(paste0("./custom/plots/heatmaps/hclust_heatmap_sigSamples",numSamplesSignificant,"_n2Contrasts.png"),width=19,height=29,units="cm",res=150)
+png(paste0(workDir, runName,"/custom/plots/heatmaps/hclust_heatmap_sigSamples",
+           numSamplesSignificant,"_padj",padjVal,"_lfc",lfcVal,"_n2Contrasts.png"),
+    width=19,height=29,units="cm",res=150)
 ht<-Heatmap(mat_lfc,show_row_names=F, cluster_columns=T, cluster_rows=T, show_row_dend = F,
-            column_names_rot=75,column_title=paste0("log2FC of ",nrow(mat_lfc)," genes singificant in >=",numSamplesSignificant," samples"))
+            column_names_rot=75,column_title=paste0("log2FC of ",nrow(mat_lfc),
+                                " genes singificant in >=",numSamplesSignificant,
+                                " samples (padj<",padjVal," |LFC|>",lfcVal,")"),
+            col=circlize::colorRamp2(breaks = c(-4, 0, 4), colors = c("blue", "white", "red")))
 ht<-draw(ht)
 dev.off()
 
 
-mat_lfc<-getLFCmat(res_lin61,numSamplesSignificant=numSamplesSignificant)
+mat_lfc<-getLFCmat(res_lin61, numSamplesSignificant, lfcVal, padjVal)
 
-png(paste0("./custom/plots/heatmaps/hclust_heatmap_sigSamples",numSamplesSignificant,"_lin61Contrasts.png"),width=19,height=29,units="cm",res=150)
+png(paste0(workDir, runName, "/custom/plots/heatmaps/hclust_heatmap_sigSamples",
+           numSamplesSignificant,"_padj",padjVal,"_lfc",lfcVal,"_lin61Contrasts.png"),
+    width=19,height=29,units="cm",res=150)
 ht<-Heatmap(mat_lfc,show_row_names=F, cluster_columns=T, cluster_rows=T, show_row_dend = F,
-            column_names_rot=75,column_title=paste0("log2FC of ",nrow(mat_lfc)," genes singificant in >=",numSamplesSignificant," samples"))
+            column_names_rot=75, column_title=paste0("log2FC of ",nrow(mat_lfc),
+                                " genes singificant in >=",numSamplesSignificant,
+                                " samples (padj<",padjVal," |LFC|>",lfcVal,")"),
+            col=circlize::colorRamp2(breaks = c(-4, 0, 4), colors = c("blue", "white", "red")))
 ht<-draw(ht)
 dev.off()
 
 
 
-numSamplesSignificant=1
-mat_lfc<-getLFCmat(results,numSamplesSignificant=numSamplesSignificant)
 
-png(paste0("./custom/plots/heatmaps/hclust_heatmap_sigSamples",numSamplesSignificant,"_allContrasts.png"),width=19,height=29,units="cm",res=150)
+mat_lfc<-getLFCmat(results, numSamplesSignificant, lfcVal, padjVal)
+
+png(paste0(workDir,runName,"/custom/plots/heatmaps/hclust_heatmap_sigSamples",
+           numSamplesSignificant,"_padj",padjVal,"_lfc",lfcVal,"_allContrasts.png"),
+    width=19,height=29,units="cm",res=150)
 ht<-Heatmap(mat_lfc,show_row_names=F, cluster_columns=T, cluster_rows=T, show_row_dend = F,
-            column_names_rot=90,column_title=paste0("log2FC of ",nrow(mat_lfc)," genes singificant in >=",numSamplesSignificant," samples"))
+            column_names_rot=90, column_title=paste0("log2FC of ",nrow(mat_lfc),
+                                " genes singificant in >=",numSamplesSignificant,
+                                " samples (padj<",padjVal," |LFC|>",lfcVal,")"),
+            col=circlize::colorRamp2(breaks = c(-4, 0, 4), colors = c("blue", "white", "red")))
 ht<-draw(ht)
 dev.off()
+
