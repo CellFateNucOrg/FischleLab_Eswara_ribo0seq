@@ -26,8 +26,16 @@ theme_set(
     )
 )
 
-serverPath=workDir="/Volumes/external.data/MeisterLab"
-#serverPath=workDir="Z:/MeisterLab"
+serverPath="/Volumes/external.data/MeisterLab"
+#serverPath="Z:/MeisterLab"
+workDir=paste0(serverPath,"/FischleLab_KarthikEswara/ribo0seq")
+runName="/diff_abund_2_canonical_noRRnoSP"
+prefix="ribo0_canonical_geneset_all"
+
+setwd(workDir)
+dir.create(paste0(workDir,runName,"/custom/rds"), showWarnings = FALSE, recursive = TRUE)
+dir.create(paste0(workDir,runName,"/custom/txt"), showWarnings = FALSE, recursive = TRUE)
+genomeVer<-"WS295"
 
 ### functions ------
 annotate_results <- function(gtf, pattern="\\.deseq2\\.results\\.tsv", path=".", prefix=""){
@@ -56,18 +64,9 @@ combine_results <- function(pattern="\\.deseq2\\.results_annotated\\.tsv",path="
   return(results)
 }
 
-
-
 #-----------------
-workDir=paste0(serverPath,"/FischleLab_KarthikEswara/ribo0seq")
 
-runName="/diff_abund_2_canonical_noRRnoSP"
-contrasts<-read.csv(paste0(workDir,"/contrasts.csv"),sep=",",header=T)
-prefix="ribo0_canonical_geneset_all"
-setwd(workDir)
-dir.create(paste0(workDir,runName,"/custom/rds"), showWarnings = FALSE, recursive = TRUE)
-dir.create(paste0(workDir,runName,"/custom/txt"), showWarnings = FALSE, recursive = TRUE)
-genomeVer<-"WS295"
+
 gtf<-import(paste0(serverPath,"/publicData/genomes/",genomeVer,"/c_elegans.PRJNA13758.",genomeVer,".canonical_geneset.gtf"))
 gtf <- gtf[gtf$type == "gene"]
 mcols(gtf)<-mcols(gtf)[c("source","type","gene_id","gene_biotype","gene_name")]
@@ -77,6 +76,8 @@ gtf<-sort(gtf)
 
 
 ## annotate results tables -----
+
+contrasts<-read.csv(paste0(workDir,"/contrasts.csv"),sep=",",header=T)
 
 annotate_results(gtf,path=paste0(workDir,runName),pattern="\\.deseq2\\.results\\.tsv")
 
@@ -103,11 +104,9 @@ if (file.exists(paste0(workDir,runName,"/custom/rds/",prefix,".results_annotated
 
 
 ## Get counts of up/down by different thresholds-----
-#contrasts<-read.csv("./contrasts.csv",sep=",",header=T)
-# make table of up vs down
+
 LFCthresholds<-c(0,0.5,1,1.5,2)
-#workDir<-"/Volumes/external.data/MeisterLab/FischleLab_KarthikEswara/ribo0seq/"
-#tables<-list.files(path=paste0(workDir,"tables/differential"),pattern=".*deseq2\\.results\\.tsv")
+
 contrastNames<-contrasts$id
 tbl<-list()
 for(LFCthresh in LFCthresholds){

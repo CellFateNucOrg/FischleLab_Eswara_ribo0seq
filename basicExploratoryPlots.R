@@ -25,8 +25,19 @@ theme_set(
     )
 )
 
-serverPath=workDir="/Volumes/external.data/MeisterLab"
-#serverPath=workDir="Z:/MeisterLab"
+serverPath="/Volumes/external.data/MeisterLab"
+#serverPath="Z:/MeisterLab"
+
+workDir=paste0(serverPath,"/FischleLab_KarthikEswara/ribo0seq")
+runName="/diff_abund_2_canonical_noRRnoSP"
+
+contrasts<-read.csv(paste0(workDir,"/contrasts.csv"),sep=",",header=T)
+prefix="ribo0_canonical_geneset_all"
+
+setwd(workDir)
+
+dir.create(paste0(workDir,runName,"/custom/plots"), showWarnings = FALSE, recursive = TRUE)
+
 
 ### functions ------
 tableToGranges<-function(results,sort=TRUE){
@@ -42,20 +53,6 @@ tableToGranges<-function(results,sort=TRUE){
 }
 
 
-workDir=paste0(serverPath,"/FischleLab_KarthikEswara/ribo0seq")
-
-runName="/diff_abund_2_canonical_noRRnoSP"
-contrasts<-read.csv(paste0(workDir,"/contrasts.csv"),sep=",",header=T)
-prefix="ribo0_canonical_geneset_all"
-setwd(workDir)
-dir.create(paste0(workDir,runName,"/custom/plots"), showWarnings = FALSE, recursive = TRUE)
-
-genomeVer<-"WS295"
-gtf<-import(paste0(serverPath,"/publicData/genomes/",genomeVer,"/c_elegans.PRJNA13758.",genomeVer,".canonical_geneset.gtf"))
-gtf <- gtf[gtf$type == "gene"]
-mcols(gtf)<-mcols(gtf)[c("source","type","gene_id","gene_biotype","gene_name")]
-gtf$source<-genomeVer
-gtf<-sort(gtf)
 
 ## interactive Volcano plots -------
 results<-readRDS(paste0(workDir,runName,"/custom/rds/",prefix,".results_annotated.RDS"))
