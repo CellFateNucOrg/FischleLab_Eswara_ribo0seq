@@ -335,7 +335,7 @@ makeUpsetPlot(res_lin61, numSamplesSignificant, lfcVal=0, padjVal, direction="up
 
 
 
-## euler plots ------
+## venn/euler plots ------
 results<-readRDS(paste0(workDir,runName,"/custom/rds/",prefix,".results_annotated.RDS"))
 dir.create(paste0(workDir, runName, "/custom/plots/euler"), showWarnings = FALSE, recursive = TRUE)
 dir.create(paste0(workDir, runName, "/custom/plots/venn"), showWarnings = FALSE, recursive = TRUE)

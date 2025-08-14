@@ -33,8 +33,9 @@ significant up/down regulated genes in each contras (./custom/txt/summaryUpDownD
 single track for each sample  (./custom/tracks/bigwigs_fr/\*.average_fr.bw)
 - log2 fold change bigwigs of the different samples (./custom/tracks/bigwigs_compare/\*.average_fr.log2fc.bw)
 
-***pairwiseComparisons.sh*** produces:
+***datasetComparisons.sh*** produces:
 - correlation plots for pairs of samples
-- venn diagrams for up/down regulated genes
-- euler diagrams for triplets of up/down regulated genes
+- upset plots for all N2 contrasts and lin-61 contrasts
+- venn diagrams for up/down regulated genes for lin-61 contrasts (4-way)
+- euler diagrams for triplets of up/down regulated genes fir kub-61 contrasts (all possible triplets)
 
