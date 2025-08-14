@@ -5,7 +5,7 @@ library(BSgenome.Celegans.UCSC.ce11)
 workDir<-"/Volumes/external.data/MeisterLab/FischleLab_KarthikEswara/ribo0seq/"
 dir.create(workDir,showWarnings=F, recursive=T)
 
-ff<-read.delim("./fastqFiles.txt",header=F)
+ff<-read.delim(paste0(workDir,"/fastqFiles.txt"),header=F)
 ff$sample<-sapply(strsplit(basename(ff$V1),"_"),"[[",1)
 #ff$replicate<-gsub("Rep","R",sapply(strsplit(basename(ff$V1),"_"),"[[",2))
 ff$replicate<-sapply(strsplit(basename(ff$V1),"_"),"[[",2)
@@ -90,11 +90,11 @@ gtf_original<-import(paste0("/Volumes/MeisterLab/publicData/genomes/",genomeVer,
 norr_nosp<-gtf_original[!(gtf_original$gene_id %in% toRemove),]
 export(norr_nosp,paste0("/Volumes/MeisterLab/publicData/genomes/",genomeVer,"/c_elegans.PRJNA13758.",genomeVer,".canonical_geneset_noRR_noSP.gtf"))
 
-counts<- read.delim(paste0(workDir,"/star_salmon/salmon.merged.gene_counts.tsv"))
-dim(counts)
-counts<-counts[counts$gene_id %in% norr_nosp$gene_id,]
-dim(counts)
-write.table(counts,paste0(workDir,"/star_salmon/salmon.merged.gene_counts_noRR_noSP.tsv"),sep="\t",row.names=F,quote=F)
+# counts<- read.delim(paste0(workDir,"/star_salmon/salmon.merged.gene_counts.tsv"))
+# dim(counts)
+# counts<-counts[counts$gene_id %in% norr_nosp$gene_id,]
+# dim(counts)
+# write.table(counts,paste0(workDir,"/star_salmon/salmon.merged.gene_counts_noRR_noSP.tsv"),sep="\t",row.names=F,quote=F)
 
 blacklist<-sort(c(rrI,rrV,sp))
 blacklist$name<-blacklist$gene_id

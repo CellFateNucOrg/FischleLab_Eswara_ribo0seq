@@ -17,9 +17,9 @@ WORK_DIR=/mnt/external.data/MeisterLab/FischleLab_KarthikEswara/ribo0seq
 CONFIG_FILE=/mnt/external.data/MeisterLab/nf-core/unibe_izb.config
 #SRR_FILE=${WORK_DIR}/SRR_file.csv
 
-nextflow run nf-core/differentialabundance -profile rnaseq,singularity --input ${WORK_DIR}/samplesheet.csv --outdir $WORK_DIR/diff_abund_2_canonical_noRRnoSP -c $CONFIG_FILE \
+nextflow run nf-core/differentialabundance -profile rnaseq,singularity --input ${WORK_DIR}/samplesheet.csv --outdir $WORK_DIR/diff_abund_2_canonical_noRRnoSP_moreSeq -c $CONFIG_FILE \
 	--gtf $gtfFile   \
-	--matrix ${WORK_DIR}/star_salmon/salmon.merged.gene_counts_noRR_noSP.tsv \
+	--matrix ${WORK_DIR}/star_salmon/salmon.merged.gene_counts_noRR_noSP_moreSeq.tsv \
 	--transcript_length_matrix ${WORK_DIR}/star_salmon/salmon.merged.gene_lengths.tsv \
 	--contrasts ${WORK_DIR}/contrasts.csv \
 	--deseq2_shrink_lfc true  --filtering_min_abundance 5 --filtering_min_samples 3
