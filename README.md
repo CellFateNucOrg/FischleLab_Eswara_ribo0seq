@@ -34,8 +34,10 @@ single track for each sample  (./custom/tracks/bigwigs_fr/\*.average_fr.bw)
 - log2 fold change bigwigs of the different samples (./custom/tracks/bigwigs_compare/\*.average_fr.log2fc.bw)
 
 ***datasetComparisons.sh*** produces:
-- correlation plots for pairs of samples
-- upset plots for all N2 contrasts and lin-61 contrasts
-- venn diagrams for up/down regulated genes for lin-61 contrasts (4-way)
-- euler diagrams for triplets of up/down regulated genes fir kub-61 contrasts (all possible triplets)
+- correlation plots for pairs of samples (./custom/plots/correlation)
+- upset plots for all N2 contrasts and lin-61 contrasts (./custom/plots/upset/)
+- venn diagrams for up/down regulated genes for lin-61 contrasts (4-way) (./custom/plots/venn/)
+- euler diagrams for triplets of up/down regulated genes fir kub-61 contrasts (all possible triplets) (./custom
+)
+
 
