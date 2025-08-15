@@ -28,6 +28,7 @@ theme_set(
 
 serverPath="/Volumes/external.data/MeisterLab"
 #serverPath="Z:/MeisterLab"
+source("./scripts_exploratory_analysis/functions_exploratory_analysis.R")
 
 workDir=paste0(serverPath,"/FischleLab_KarthikEswara/ribo0seq")
 runName="/diff_abund_2_canonical_noRRnoSP"
@@ -41,17 +42,17 @@ dir.create(paste0(workDir,runName,"/custom/plots"), showWarnings = FALSE, recurs
 
 
 ### functions ------
-tableToGranges<-function(results,sort=TRUE){
-  gr <- makeGRangesFromDataFrame(results, keep.extra.columns=TRUE,
-                                 seqnames.field="seqnames",
-                                 start.field="start",
-                                 end.field="end",
-                                 strand.field="strand")
-  if(sort){
-    gr<-sort(gr)
-  }
-  return(gr)
-}
+# tableToGranges<-function(results,sort=TRUE){
+#   gr <- makeGRangesFromDataFrame(results, keep.extra.columns=TRUE,
+#                                  seqnames.field="seqnames",
+#                                  start.field="start",
+#                                  end.field="end",
+#                                  strand.field="strand")
+#   if(sort){
+#     gr<-sort(gr)
+#   }
+#   return(gr)
+# }
 
 
 
@@ -269,83 +270,122 @@ lin61contrasts<-grep("vs_HPL2GFP__lin61$",levels(results$group),value=T)
 res_n2<-results[results$group %in% n2contrasts,]
 res_lin61<-results[results$group %in% lin61contrasts,]
 
-gatherResults<-function(results, valueColumn, nameColumn="group"){
-  results[,nameColumn]<-droplevels(results[,nameColumn])
-  for(c in levels(results[,nameColumn])){
-    tmp<-results[results[,nameColumn]==c,c("gene_id",valueColumn)]
-    colnames(tmp)[2]<-paste0(valueColumn,"_",c)
-    if(!exists("gathered")){
-      gathered<-tmp
-    } else {
-      gathered<-merge(gathered,tmp,by="gene_id",all=T)
-    }
-  }
-  return(gathered)
-}
+# gatherResults<-function(results, valueColumn, nameColumn="group"){
+#   results[,nameColumn]<-droplevels(results[,nameColumn])
+#   for(c in levels(results[,nameColumn])){
+#     tmp<-results[results[,nameColumn]==c,c("gene_id",valueColumn)]
+#     colnames(tmp)[2]<-paste0(valueColumn,"_",c)
+#     if(!exists("gathered")){
+#       gathered<-tmp
+#     } else {
+#       gathered<-merge(gathered,tmp,by="gene_id",all=T)
+#     }
+#   }
+#   return(gathered)
+# }
 
 
-getLFCMat<-function(results, numSamplesSignificant=1, lfcVal=0, padjVal=0.05){
-  mat_padj<-gatherResults(results,valueColumn="padj")
-  mat_padj[is.na(mat_padj)]<-1
-  mat_lfc<-gatherResults(results,valueColumn="log2FoldChange")
-
-  sig<-(mat_padj[,2:ncol(mat_padj)]<padjVal & abs(mat_lfc[,2:ncol(mat_lfc)])>lfcVal)
-  sigGenes<-mat_padj$gene_id[rowSums(sig)>numSamplesSignificant]
-
-  mat_lfc<-mat_lfc[mat_lfc$gene_id %in% sigGenes,]
-  rownames(mat_lfc)<-mat_lfc$gene_id
-  mat_lfc<-mat_lfc[,2:ncol(mat_lfc)]
-  mat_lfc<-as.matrix(mat_lfc)
-  colnames(mat_lfc)<-gsub("log2FoldChange_","",colnames(mat_lfc))
-  return(mat_lfc)
-}
-
-
+# getLFCMat<-function(results, numSamplesSignificant=1, lfcVal=0, padjVal=0.05){
+#   mat_padj<-gatherResults(results,valueColumn="padj")
+#   mat_padj[is.na(mat_padj)]<-1
+#   mat_lfc<-gatherResults(results,valueColumn="log2FoldChange")
+#
+#   sig<-(mat_padj[,2:ncol(mat_padj)]<padjVal & abs(mat_lfc[,2:ncol(mat_lfc)])>lfcVal)
+#   sigGenes<-mat_padj$gene_id[rowSums(sig)>numSamplesSignificant]
+#
+#   mat_lfc<-mat_lfc[mat_lfc$gene_id %in% sigGenes,]
+#   rownames(mat_lfc)<-mat_lfc$gene_id
+#   mat_lfc<-mat_lfc[,2:ncol(mat_lfc)]
+#   mat_lfc<-as.matrix(mat_lfc)
+#   colnames(mat_lfc)<-gsub("log2FoldChange_","",colnames(mat_lfc))
+#   return(mat_lfc)
+# }
 
 
-numSamplesSignificant=3
-lfcVal=1
+
+
+# n2
 padjVal=0.05
-mat_lfc<-getLFCmat(res_n2,numSamplesSignificant, lfcVal, padjVal)
 
-png(paste0(workDir, runName,"/custom/plots/heatmaps/hclust_heatmap_sigSamples",
-           numSamplesSignificant,"_padj",padjVal,"_lfc",lfcVal,"_n2Contrasts.png"),
-    width=19,height=29,units="cm",res=150)
-ht<-Heatmap(mat_lfc,show_row_names=F, cluster_columns=T, cluster_rows=T, show_row_dend = F,
-            column_names_rot=75,column_title=paste0("log2FC of ",nrow(mat_lfc),
-                                                    " genes singificant in >=",numSamplesSignificant,
-                                                    " samples (padj<",padjVal," |LFC|>",lfcVal,")"),
-            col=circlize::colorRamp2(breaks = c(-4, 0, 4), colors = c("blue", "white", "red")))
-ht<-draw(ht)
-dev.off()
+makeHeatmapPlot(res_n2, numSamplesSignificant=1, lfcVal=0, padjVal, direction="both",
+                groupsToPlot=n2contrasts, setName="n2_contrasts",
+                chromosomes="all")
 
+makeHeatmapPlot(res_n2, numSamplesSignificant=2, lfcVal=0, padjVal, direction="both",
+                groupsToPlot=n2contrasts, setName="n2_contrasts",
+                chromosomes="all")
 
-mat_lfc<-getLFCmat(res_lin61, numSamplesSignificant, lfcVal, padjVal)
+makeHeatmapPlot(res_n2, numSamplesSignificant=3, lfcVal=0, padjVal, direction="both",
+                groupsToPlot=n2contrasts, setName="n2_contrasts",
+                chromosomes="all")
 
-png(paste0(workDir, runName, "/custom/plots/heatmaps/hclust_heatmap_sigSamples",
-           numSamplesSignificant,"_padj",padjVal,"_lfc",lfcVal,"_lin61Contrasts.png"),
-    width=19,height=29,units="cm",res=150)
-ht<-Heatmap(mat_lfc,show_row_names=F, cluster_columns=T, cluster_rows=T, show_row_dend = F,
-            column_names_rot=75, column_title=paste0("log2FC of ",nrow(mat_lfc),
-                                                     " genes singificant in >=",numSamplesSignificant,
-                                                     " samples (padj<",padjVal," |LFC|>",lfcVal,")"),
-            col=circlize::colorRamp2(breaks = c(-4, 0, 4), colors = c("blue", "white", "red")))
-ht<-draw(ht)
-dev.off()
+makeHeatmapPlot(res_n2, numSamplesSignificant=1, lfcVal=1, padjVal, direction="both",
+                groupsToPlot=n2contrasts, setName="n2_contrasts",
+                chromosomes="all")
+
+makeHeatmapPlot(res_n2, numSamplesSignificant=2, lfcVal=1, padjVal, direction="both",
+                groupsToPlot=n2contrasts, setName="n2_contrasts",
+                chromosomes="all")
+
+makeHeatmapPlot(res_n2, numSamplesSignificant=3, lfcVal=1, padjVal, direction="both",
+                          groupsToPlot=n2contrasts, setName="n2_contrasts",
+                          chromosomes="all")
 
 
+makeHeatmapPlot(res_n2, numSamplesSignificant=1, lfcVal=1, padjVal, direction="both",
+                groupsToPlot=n2contrasts, setName="n2_contrasts",
+                chromosomes="autosomal")
+
+makeHeatmapPlot(res_n2, numSamplesSignificant=2, lfcVal=1, padjVal, direction="both",
+                groupsToPlot=n2contrasts, setName="n2_contrasts",
+                chromosomes="autosomal")
 
 
-mat_lfc<-getLFCmat(results, numSamplesSignificant, lfcVal, padjVal)
+makeHeatmapPlot(res_n2, numSamplesSignificant=1, lfcVal=0.5, padjVal, direction="both",
+                groupsToPlot=n2contrasts, setName="n2_contrasts",
+                chromosomes="autosomal")
 
-png(paste0(workDir,runName,"/custom/plots/heatmaps/hclust_heatmap_sigSamples",
-           numSamplesSignificant,"_padj",padjVal,"_lfc",lfcVal,"_allContrasts.png"),
-    width=19,height=29,units="cm",res=150)
-ht<-Heatmap(mat_lfc,show_row_names=F, cluster_columns=T, cluster_rows=T, show_row_dend = F,
-            column_names_rot=90, column_title=paste0("log2FC of ",nrow(mat_lfc),
-                                                     " genes singificant in >=",numSamplesSignificant,
-                                                     " samples (padj<",padjVal," |LFC|>",lfcVal,")"),
-            col=circlize::colorRamp2(breaks = c(-4, 0, 4), colors = c("blue", "white", "red")))
-ht<-draw(ht)
-dev.off()
+makeHeatmapPlot(res_n2, numSamplesSignificant=2, lfcVal=0.5, padjVal, direction="both",
+                groupsToPlot=n2contrasts, setName="n2_contrasts",
+                chromosomes="autosomal")
 
+# lin61
+makeHeatmapPlot(res_lin61, numSamplesSignificant=1, lfcVal=0, padjVal, direction="both",
+                groupsToPlot=lin61contrasts, setName="lin61_contrasts",
+                chromosomes="all")
+
+makeHeatmapPlot(res_lin61, numSamplesSignificant=2, lfcVal=0, padjVal, direction="both",
+                groupsToPlot=lin61contrasts, setName="lin61_contrasts",
+                chromosomes="all")
+
+makeHeatmapPlot(res_lin61, numSamplesSignificant=3, lfcVal=0, padjVal, direction="both",
+                groupsToPlot=lin61contrasts, setName="lin61_contrasts",
+                chromosomes="all")
+
+makeHeatmapPlot(res_lin61, numSamplesSignificant=1, lfcVal=1, padjVal, direction="both",
+                groupsToPlot=lin61contrasts, setName="lin61_contrasts",
+                chromosomes="all")
+
+makeHeatmapPlot(res_lin61, numSamplesSignificant=2, lfcVal=1, padjVal, direction="both",
+                groupsToPlot=lin61contrasts, setName="lin61_contrasts",
+                chromosomes="all")
+
+makeHeatmapPlot(res_lin61, numSamplesSignificant=3, lfcVal=1, padjVal, direction="both",
+                groupsToPlot=lin61contrasts, setName="lin61_contrasts",
+                chromosomes="all")
+
+makeHeatmapPlot(res_lin61, numSamplesSignificant=1, lfcVal=1, padjVal, direction="both",
+                groupsToPlot=lin61contrasts, setName="lin61_contrasts",
+                chromosomes="autosomal")
+
+makeHeatmapPlot(res_lin61, numSamplesSignificant=2, lfcVal=1, padjVal, direction="both",
+                groupsToPlot=lin61contrasts, setName="lin61_contrasts",
+                chromosomes="autosomal")
+
+makeHeatmapPlot(res_lin61, numSamplesSignificant=1, lfcVal=0.5, padjVal, direction="both",
+                groupsToPlot=lin61contrasts, setName="lin61_contrasts",
+                chromosomes="autosomal")
+
+makeHeatmapPlot(res_lin61, numSamplesSignificant=2, lfcVal=0.5, padjVal, direction="both",
+                groupsToPlot=lin61contrasts, setName="lin61_contrasts",
+                chromosomes="autosomal")
