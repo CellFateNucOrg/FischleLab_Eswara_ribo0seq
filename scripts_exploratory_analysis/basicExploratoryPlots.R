@@ -31,7 +31,7 @@ serverPath="/Volumes/external.data/MeisterLab"
 source("./scripts_exploratory_analysis/functions_exploratory_analysis.R")
 
 workDir=paste0(serverPath,"/FischleLab_KarthikEswara/ribo0seq")
-runName="/diff_abund_2_canonical_noRRnoSP"
+runName="/diff_abund_3_canonical_noRRnoSP_moreSeq"
 
 contrasts<-read.csv(paste0(workDir,"/contrasts.csv"),sep=",",header=T)
 prefix="ribo0_canonical_geneset_all"
@@ -68,7 +68,7 @@ gr$chrRegion[queryHits(ol)] <- paste0(seqnames(rockman)[subjectHits(ol)],"_",roc
 res<-as.data.frame(gr)
 contrasts
 
-lfcVal=1
+lfcVal=0.5
 padjVal=0.05
 
 # free scale
@@ -156,7 +156,7 @@ for(i in 1:length(contrasts$id)){
 
 
 ## Up down by chromosome  -----
-lfcVal=1
+lfcVal=0.5
 padjVal=0.05
 
 

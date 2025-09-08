@@ -29,7 +29,7 @@ theme_set(
 serverPath="/Volumes/external.data/MeisterLab"
 #serverPath="Z:/MeisterLab"
 workDir=paste0(serverPath,"/FischleLab_KarthikEswara/ribo0seq")
-runName="/diff_abund_2_canonical_noRRnoSP"
+runName="/diff_abund_3_canonical_noRRnoSP_moreSeq"
 prefix="ribo0_canonical_geneset_all"
 
 setwd(workDir)
@@ -85,6 +85,8 @@ results<-combine_results(path=paste0(workDir,runName),pattern="\\.deseq2\\.resul
 results$seqnames<- factor(results$seqnames, levels=c("I", "II", "III", "IV", "V", "X", "MtDNA"))
 results$shortId<-results$group
 contrasts$shortId<- gsub("_","",contrasts$id)
+write.csv(contrasts,paste0(workDir,"/contrasts.csv"),row.names=F,quote=F)
+
 #idx<-match(results$group,contrasts$shortId)
 #results$contrast<-contrasts$id[idx]
 results$shortId<-factor(results$group, levels=contrasts$shortId)

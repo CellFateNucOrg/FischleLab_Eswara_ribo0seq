@@ -27,11 +27,11 @@ theme_set(
     )
 )
 
-serverPath="/Volumes/external.data/MeisterLab"
-#serverPath="Z:/MeisterLab"
+#serverPath="/Volumes/external.data/MeisterLab"
+serverPath="Z:/MeisterLab"
 
 workDir=paste0(serverPath,"/FischleLab_KarthikEswara/ribo0seq")
-runName="/diff_abund_2_canonical_noRRnoSP"
+runName="/diff_abund_3_canonical_noRRnoSP_moreSeq"
 
 contrasts<-read.csv(paste0(workDir,"/contrasts.csv"),sep=",",header=T)
 prefix="ribo0_canonical_geneset_all"
@@ -266,11 +266,11 @@ padjVal=0.05
 
 
 ## N2  both directions
-makeUpsetPlot(res_n2, numSamplesSignificant, lfcVal=1, padjVal, direction="both",
+makeUpsetPlot(res_n2, numSamplesSignificant, lfcVal=0.5, padjVal, direction="both",
                         minSize=50, minDegree=2, groupsToPlot=n2contrasts, setName="n2_contrasts",
                         chromosomes="all")
 
-makeUpsetPlot(res_n2, numSamplesSignificant, lfcVal=1, padjVal, direction="both",
+makeUpsetPlot(res_n2, numSamplesSignificant, lfcVal=0.5, padjVal, direction="both",
               minSize=20, minDegree=3, groupsToPlot=n2contrasts, setName="n2_contrasts",
               chromosomes="all")
 

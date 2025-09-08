@@ -7,7 +7,7 @@
 source $CONDA_ACTIVATE deeptools
 
 workDir=/mnt/external.data/MeisterLab/FischleLab_KarthikEswara/ribo0seq
-runName=diff_abund_2_canonical_noRRnoSP
+runName=diff_abund_3_canonical_noRRnoSP_moreSeq
 samplesheet=$workDir/samplesheet.csv
 sizeFactorFile=$workDir/$runName/other/deseq2/HPL2GFP_lin61_vs_N2.deseq2.sizefactors.tsv
 blackListFile=$workDir/$runName/custom/tracks/c_elegans.PRJNA13758.WS295.blacklist_RR_SP.bed
@@ -54,22 +54,22 @@ for group in "${groups[@]}"; do
   bigwigs_r=( "${samples[@]/%/.reverse.bigWig}" )
   bigwigs_f=( "${bigwigs_f[@]/#/${workDir}/star_salmon/bigwig/}" )
   bigwigs_r=( "${bigwigs_r[@]/#/${workDir}/star_salmon/bigwig/}" )
-  
+
   # NOTE: naming of star_salmon bigwigs with forward/reverse seems to be inverted. not sure if this is always true.
   # check on IGV and rename if necessary
   if [ ! -f "${outDir}/${group}.reverse.avr.bw" ]; then
     echo "averaging forward strand bigwigs"
     bigwigAverage -b ${bigwigs_f[@]} -o ${outDir}/${group}.reverse.avr.bw --scaleFactors $(IFS=:; echo "${scaleFactors[*]}") -bl $blackListFile
   fi
-  
+
   if [ ! -f "${outDir}/${group}.forward.avr.bw" ]; then
     echo "averaging reverse strand bigwigs"
     bigwigAverage -b ${bigwigs_r[@]} -o ${outDir}/${group}.forward.avr.bw --scaleFactors $(IFS=:; echo "${scaleFactors[*]}") -bl $blackListFile
   fi
-  
+
   if [ ! -f "${outDir}/${group}.average_fr.bw" ]; then
     echo "averaging forward and reverse strand bigwigs"
-    bigwigAverage -b ${outDir}/${group}.forward.avr.bw ${outDir}/${group}.reverse.avr.bw -o ${outDir}/${group}.average_fr.bw 
+    bigwigAverage -b ${outDir}/${group}.forward.avr.bw ${outDir}/${group}.reverse.avr.bw -o ${outDir}/${group}.average_fr.bw
   fi
 done
 
