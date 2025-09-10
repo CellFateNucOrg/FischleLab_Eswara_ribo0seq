@@ -13,7 +13,7 @@ Use ***./makeSampleSheet.R*** to create samples sheet and contrast file for runn
 
 ## Exploratory Analysis
 
-Scripts in ./exploratory_analysis/ folder
+Scripts in ./scripts_exploratory_analysis/ folder
 
 ***postProcessing.R*** annotates results tables with additional data from gtf (./custom/txt/\*_annotated.tsv) and
 combines them into a single results file (./custom/rds/\*.results_annotated.RDS). Also produces a text file with number of
@@ -40,4 +40,22 @@ single track for each sample  (./custom/tracks/bigwigs_fr/\*.average_fr.bw)
 - euler diagrams for triplets of up/down regulated genes fir kub-61 contrasts (all possible triplets) (./custom
 )
 
+## Final figures
 
+Scripts in ./scripts_finalFigures/ folder
+
+Focussing on significant genes (padj<0.05, LFC>0.5) on autosomal chromosome arms.
+
+Using only 4 contrasts:
+
+Only Dimerisation, Only LLPS, No LLPS No Dimerization and Double mutant compared to lin-61; hpl-2::gfp control.
+
+***upregulatedGenesOnArms.R*** produces:
+- Heatmap for all genes signfifantly upregulated in at least one group (combined or split by group)
+- Boxplots of LFC of upregulated genes (or all expressed autosomal arm genes)
+- Upset plot for all datasets
+- Venn diagram for all datasets
+- Pairwise Euler diagrams for all datasets
+- Gene lists for significant genes in each group for GO and GSEA
+
+output is all in ./custom/finalFigures/upregulatedOnArms/
