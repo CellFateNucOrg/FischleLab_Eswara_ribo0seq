@@ -13,6 +13,14 @@ library(rstatix)
 library(htmlwidgets)
 library(RColorBrewer)
 library(ComplexHeatmap)
+library(tidyr)
+library(grid)
+library(gridExtra)
+library(ggplotify)
+library(RColorBrewer)
+library(eulerr)
+library(ComplexUpset)
+library(ggVennDiagram)
 
 
 
@@ -76,7 +84,7 @@ ss$shortId<-droplevels(ss$shortId)
 ss$group<-factor(ss$shortId,levels=contrasts$shortId,labels=contrasts$prettyName)
 table(ss$seqnames,ss$group)
 saveRDS(ss, paste0(workDir,runName,"/custom/rds/",prefix,"_subset.results_annotated.RDS"))
-
+sss<-readRDS(paste0(workDir,runName,"/custom/rds/",prefix,"_subset.results_annotated.RDS"))
 # keep values in all samples for genes significant in at least one
 genesToKeep<-unique(ss$gene_id)
 ss<-res[res$gene_id %in% genesToKeep & res$shortId %in% contrasts$shortId,]
@@ -91,18 +99,13 @@ rm(results)
 rm(ss)
 rm(genesToKeep)
 
-## Heatmap of significant genes -----
-res<-readRDS(paste0(workDir,runName,"/custom/rds/",prefix,"_subsetByGene.results_annotated.RDS"))
-
-#makeHeatmapPlot(res, numSamplesSignificant=1, lfcVal, padjVal, direction="up",
-#                groupsToPlot=levels(res$group), setName="mutants",
-#                chromosomes="autosomal")
 
 chromosomes<-"autosomal"
 direction<-"up"
 numSamplesSignificant=1
 
-#mat_lfc<-getLFCMat(res, numSamplesSignificant, lfcVal, padjVal, direction, chromosomes)
+## Heatmap of significant genes -----
+res<-readRDS(paste0(workDir,runName,"/custom/rds/",prefix,"_subsetByGene.results_annotated.RDS"))
 
 mat_padj<-gatherResults(res,valueColumn="padj")
 mat_padj[is.na(mat_padj)]<-1
@@ -142,7 +145,7 @@ ht<-Heatmap(mat_lfc,show_row_names=F,
             column_names_gp=gpar(fontsize=10),
             col=col_fun,
             column_title_gp = gpar(fontsize = 12, fontface = "bold", just = 0),
-            heatmap_legend_param=list(title=expression("log"[2]~"(FC)")),
+            heatmap_legend_param=list(title=expression("log"[2]~"FC")),
             )
 ht<-draw(ht)
 dev.off()
@@ -161,7 +164,7 @@ ht_list <- lapply(names(mat_list), function(name) {
           column_title_gp = gpar(fontsize = 10, fontface = "bold", just = -5),
           row_title_rot=0, row_title_gp=gpar(fontsize=10),
           col=col_fun,
-          heatmap_legend_param=list(title=expression("log"[2]~"(FC)"))
+          heatmap_legend_param=list(title=expression("log"[2]~"FC"))
   )
 })
 
@@ -171,3 +174,139 @@ draw(ht_combined,merge_legend=T, heatmap_legend_side="right")
 dev.off()
 
 sapply(mat_list,nrow)
+
+
+
+## boxplots  -----
+colorSet<-brewer.pal(8, "Dark2")
+res<-readRDS(paste0(workDir,runName,"/custom/rds/",prefix,"_subsetByGene.results_annotated.RDS"))
+
+#obsCounts<-data.frame(res) %>% group_by(group) %>%
+#  summarize(count = n())
+tt<-data.frame(res) %>% t_test(log2FoldChange~group,var.equal=F) %>%
+  adjust_pvalue(method="fdr") %>% p_format(new.col=T,accuracy=1e-32)
+ylimits<-c(-1.5,3)
+p1<-ggplot(res,aes(x=group,y=log2FoldChange)) +
+  geom_boxplot(aes(fill=group),outlier.shape=NA) +
+  coord_cartesian(ylim=ylimits) +
+  geom_hline(yintercept=0,linetype="dashed",color="grey40") +
+  #geom_text(data=obsCounts,aes(label=count,y=ylimits[1]*0.95),color="blue",angle=0,size=3) +
+  stat_pvalue_manual(data=tt,label="p.adj.format",y.position=ylimits[2]*0.65,step.increase=0.007,
+                     angle=0, hide.ns=T,tip.length=0.001,label.size=3) +
+  labs(title=paste0(length(unique(res$gene_id)),
+                    " genes on autosomal<br>arms significant in >=",
+                    numSamplesSignificant," sample"),
+       y="log<sub>2</sub>FC")+
+  theme(legend.position = "none", axis.text.x = element_text(angle = 90, hjust = 1),
+        axis.title.x=element_blank())
+p1
+ggsave(filename = paste0(workDir, runName, "/custom/finalFigures/upregulatedOnArms/lfcByGroup_autosomalArmUp",
+                         "_padj",padjVal,"_lfc",lfcVal,".pdf"),
+       plot = p1, width = 6.5, height = 15,units="cm")
+#y.position=seq(ylimits[2]*0.95,ylimits[2]-0.83,-ylimits[2]*0.24/nrow(wilcoxt))
+
+
+
+# all arm genes
+results<-readRDS(paste0(workDir,runName,"/custom/rds/",prefix,".results_annotated.RDS"))
+dir.create(paste0(workDir,runName,"/custom/finalFigures/upregulatedOnArms"), showWarnings = FALSE, recursive = TRUE)
+rockman<-readRDS(paste0(serverPath,"/publicData/Various/chrRegions_Rockman2009.RDS"))
+gr<-tableToGranges(results,sort=FALSE)
+seqlevelsStyle(gr)<-"UCSC"
+ol<-findOverlaps(resize(gr,width=1,fix="start"),rockman,ignore.strand=T)
+gr$chrRegionType[queryHits(ol)] <- paste0(rockman$chrRegionType[subjectHits(ol)])
+gr$chrRegion[queryHits(ol)] <- paste0(seqnames(rockman)[subjectHits(ol)],"_",rockman$chrRegionType[subjectHits(ol)])
+res<-as.data.frame(gr)
+ss<-res %>% filter(shortId %in% contrasts$shortId,
+                   chrRegionType %in% c("arm", "tip"),
+                   seqnames %in% seqnames(Celegans)[1:5])
+ss$longId<-droplevels(ss$group)
+ss$shortId<-droplevels(ss$shortId)
+ss$group<-factor(ss$shortId,levels=contrasts$shortId,labels=contrasts$prettyName)
+saveRDS(ss, paste0(workDir,runName,"/custom/rds/",prefix,"_allArmGenes.results_annotated.RDS"))
+
+#obsCounts<-data.frame(ss) %>% group_by(group) %>%
+#  summarize(count = n())
+tt<-data.frame(ss) %>% t_test(log2FoldChange~group, var.equal=T) %>%
+  adjust_pvalue(method="fdr") %>% p_format(new.col=T,accuracy=1e-32)
+ylimits<-c(-1.5,2)
+p2<-ggplot(ss,aes(x=group,y=log2FoldChange)) +
+  geom_boxplot(aes(fill=group),outlier.shape=NA) +
+  coord_cartesian(ylim=ylimits) +
+  geom_hline(yintercept=0,linetype="dashed",color="grey40") +
+  #geom_text(data=obsCounts,aes(label=count,y=ylimits[1]*0.95),color="blue",angle=0,size=3) +
+  stat_pvalue_manual(data=tt,label="p.adj.format",y.position=ylimits[2]*0.8,step.increase=0.003,
+                     angle=0, hide.ns=T,tip.length=0.001,label.size=3) +
+  labs(title=paste0(length(unique(ss$gene_id)),
+                    " (all expressed) genes<br>on autosomal arms"),
+       y="log<sub>2</sub>FC")+
+  theme(legend.position = "none", axis.text.x = element_text(angle = 90, hjust = 1),
+        axis.title.x=element_blank())
+p2
+ggsave(filename = paste0(workDir, runName, "/custom/finalFigures/upregulatedOnArms/lfcByGroup_autosomalArm",
+                         "_allGenes.pdf"),
+       plot = p2, width = 6.5, height = 15,units="cm")
+
+
+## upset plot ------
+res<-readRDS(paste0(workDir,runName,"/custom/rds/",prefix,"_subsetByGene.results_annotated.RDS"))
+binMat<-getBinaryMat(res, numSamplesSignificant, lfcVal, padjVal, direction, chromosomes)
+
+minSize=2
+minDegree=2
+
+groupsToPlot=colnames(binMat)
+df<-data.frame(binMat)
+colnames(df)<-groupsToPlot
+p<-ComplexUpset::upset(df,groupsToPlot,
+                       min_size=minSize, min_degree=minDegree,
+                       base_annotations=list(
+                         'Intersection ratio'=intersection_ratio(text_mapping=aes(label=!!upset_text_percentage())),
+                         'Intersection size'=intersection_size()))
+p
+ggsave(paste0(workDir, runName,"/custom/finalFigures/upregulatedOnArms/upsetPlot_minSize",minSize,"_minDeg",minDegree,"_",direction,"_",chromosomes,"Chr_lfcVal",lfcVal,".pdf"), plot=p, width=12, height=8)
+
+
+## Venn diagram -----
+res<-readRDS(paste0(workDir,runName,"/custom/rds/",prefix,"_subsetByGene.results_annotated.RDS"))
+binMat<-getBinaryMat(res, numSamplesSignificant, lfcVal, padjVal, direction, chromosomes)
+
+### 4-way
+geneList<-list()
+for(c in colnames(binMat)){
+  geneList[[c]]<-rownames(binMat[binMat[,c]==1,])
+}
+
+for (i in 1:length(geneList)){
+  write.csv(geneList[[i]], paste0(workDir, runName, "/custom/finalFigures/upregulatedOnArms/geneList_",gsub(" ","",names(geneList)[i]),
+                                           direction,"_",chromosomes,"Arms_lfcVal",lfcVal,".csv"),
+            row.names=F, quote=F)
+}
+# background list
+ss<-readRDS(paste0(workDir,runName,"/custom/rds/",prefix,"_allArmGenes.results_annotated.RDS"))
+#bgGenes<-unique(ss$gene_id)[!(unique(ss$gene_id) %in% unlist(geneList))]
+bgGenes<-unique(ss$gene_id)
+write.csv(bgGenes, paste0(workDir, runName, "/custom/finalFigures/upregulatedOnArms/geneList_background_allGenes_",
+                          chromosomes,"Arms.csv"),
+          row.names=F, quote=F)
+
+
+p1<-ggVennDiagram(geneList, label_alpha = 0) +
+  scale_fill_gradient(low = "white", high="darkred") +
+  coord_cartesian(clip="off") +
+  theme(plot.margin = margin(1, 1, 1, 3, "cm"))
+ggsave(paste0(workDir, runName, "/custom/finalFigures/upregulatedOnArms/venn_4way_combination_",direction,"_",chromosomes,"Arms_lfcVal",lfcVal,".pdf"), plot=p1, width=8, height=6)
+
+
+
+### 3-way combinations
+lin61groups<-combn(colnames(binMat),2)
+lin61groups
+colors <- brewer.pal(4, "Accent")
+named_colors <- setNames(colors,colnames(binMat))
+for(i in 1:ncol(lin61groups)){
+  fit<-euler(binMat[,lin61groups[,i]])
+  #fit
+  p<-plot(fit,quantities=T, fills = list(fill = named_colors[lin61groups[,i]], alpha = 0.7))
+  ggsave(paste0(workDir, runName, "/custom/finalFigures/upregulatedOnArms/euler_2way_",direction,"_",chromosomes,"Arms_lfcVal",lfcVal,"_combination",i,".pdf"), plot=p, width=8, height=6)
+}

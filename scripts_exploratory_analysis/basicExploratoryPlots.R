@@ -41,18 +41,6 @@ setwd(workDir)
 dir.create(paste0(workDir,runName,"/custom/plots"), showWarnings = FALSE, recursive = TRUE)
 
 
-### functions ------
-# tableToGranges<-function(results,sort=TRUE){
-#   gr <- makeGRangesFromDataFrame(results, keep.extra.columns=TRUE,
-#                                  seqnames.field="seqnames",
-#                                  start.field="start",
-#                                  end.field="end",
-#                                  strand.field="strand")
-#   if(sort){
-#     gr<-sort(gr)
-#   }
-#   return(gr)
-# }
 
 
 
