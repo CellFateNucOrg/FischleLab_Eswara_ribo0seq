@@ -61,6 +61,7 @@ dir.create(paste0(workDir,runName,"/custom/finalFigures"), showWarnings = FALSE,
 
 ## subset data -------
 results<-readRDS(paste0(workDir,runName,"/custom/rds/",prefix,".results_annotated.RDS"))
+results$padj[is.na(results$padj)]<-1
 dir.create(paste0(workDir,runName,"/custom/finalFigures/upregulatedOnArms"), showWarnings = FALSE, recursive = TRUE)
 rockman<-readRDS(paste0(serverPath,"/publicData/Various/chrRegions_Rockman2009.RDS"))
 gr<-tableToGranges(results,sort=FALSE)
@@ -83,8 +84,9 @@ ss$longId<-droplevels(ss$group)
 ss$shortId<-droplevels(ss$shortId)
 ss$group<-factor(ss$shortId,levels=contrasts$shortId,labels=contrasts$prettyName)
 table(ss$seqnames,ss$group)
+table(ss$group)
 saveRDS(ss, paste0(workDir,runName,"/custom/rds/",prefix,"_subset.results_annotated.RDS"))
-sss<-readRDS(paste0(workDir,runName,"/custom/rds/",prefix,"_subset.results_annotated.RDS"))
+
 # keep values in all samples for genes significant in at least one
 genesToKeep<-unique(ss$gene_id)
 ss<-res[res$gene_id %in% genesToKeep & res$shortId %in% contrasts$shortId,]
@@ -184,7 +186,7 @@ res<-readRDS(paste0(workDir,runName,"/custom/rds/",prefix,"_subsetByGene.results
 #obsCounts<-data.frame(res) %>% group_by(group) %>%
 #  summarize(count = n())
 tt<-data.frame(res) %>% t_test(log2FoldChange~group,var.equal=F) %>%
-  adjust_pvalue(method="fdr") %>% p_format(new.col=T,accuracy=1e-32)
+  adjust_pvalue(method="fdr") %>% p_format(p.adj, new.col=T,accuracy=1e-32)
 ylimits<-c(-1.5,3)
 p1<-ggplot(res,aes(x=group,y=log2FoldChange)) +
   geom_boxplot(aes(fill=group),outlier.shape=NA) +
@@ -227,8 +229,8 @@ saveRDS(ss, paste0(workDir,runName,"/custom/rds/",prefix,"_allArmGenes.results_a
 
 #obsCounts<-data.frame(ss) %>% group_by(group) %>%
 #  summarize(count = n())
-tt<-data.frame(ss) %>% t_test(log2FoldChange~group, var.equal=T) %>%
-  adjust_pvalue(method="fdr") %>% p_format(new.col=T,accuracy=1e-32)
+tt<-data.frame(ss) %>% t_test(log2FoldChange~group, var.equal=F) %>%
+  adjust_pvalue(method="fdr") %>% p_format(p.adj,new.col=T,accuracy=1e-32)
 ylimits<-c(-1.5,2)
 p2<-ggplot(ss,aes(x=group,y=log2FoldChange)) +
   geom_boxplot(aes(fill=group),outlier.shape=NA) +

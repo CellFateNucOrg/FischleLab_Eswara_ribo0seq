@@ -46,6 +46,7 @@ dir.create(paste0(workDir,runName,"/custom/plots"), showWarnings = FALSE, recurs
 
 ## interactive Volcano plots -------
 results<-readRDS(paste0(workDir,runName,"/custom/rds/",prefix,".results_annotated.RDS"))
+results$padj[is.na(results$padj)]<-1
 dir.create(paste0(workDir,runName,"/custom/plots/volcano"), showWarnings = FALSE, recursive = TRUE)
 rockman<-readRDS(paste0(serverPath,"/publicData/Various/chrRegions_Rockman2009.RDS"))
 gr<-tableToGranges(results,sort=FALSE)

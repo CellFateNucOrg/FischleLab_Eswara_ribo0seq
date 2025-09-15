@@ -51,7 +51,7 @@ Using only 4 contrasts:
 Only Dimerisation, Only LLPS, No LLPS No Dimerization and Double mutant compared to lin-61; hpl-2::gfp control.
 
 ***upregulatedGenesOnArms.R*** produces:
-- Heatmap for all genes signfifantly upregulated in at least one group (combined or split by group)
+- Heatmap for all genes significantly upregulated in at least one group (combined or split by group)
 - Boxplots of LFC of upregulated genes (or all expressed autosomal arm genes)
 - Upset plot for all datasets
 - Venn diagram for all datasets
@@ -59,3 +59,4 @@ Only Dimerisation, Only LLPS, No LLPS No Dimerization and Double mutant compared
 - Gene lists for significant genes in each group for GO and GSEA
 
 output is all in ./custom/finalFigures/upregulatedOnArms/
+
