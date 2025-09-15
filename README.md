@@ -40,6 +40,19 @@ single track for each sample  (./custom/tracks/bigwigs_fr/\*.average_fr.bw)
 - euler diagrams for triplets of up/down regulated genes fir kub-61 contrasts (all possible triplets) (./custom
 )
 
+***exploreChIP.R*** produces:
+- bedfiles of singificantly up/down regulated genes from each mutant to be used by deeptools (./custom/exploreChIP/bed/)
+- boxplots of LFC of genes from different datasets that overlap stratified 10kb triple peak regions, plotted either for all genes or only significantly upregulated autosomal arm genes (./custom/exploreChIP/*triplPeaks10kb_boxplot.pdf)
+- histograms of the number of peaks per gene from each of the three peak-bedfiles plotted for all genes (./custom/exploreChIP/allGenes_bedPeakOverlap_histogram.pdf)
+- stacked barplots showing the number of differnt types of peaks overlapped per gene for
+triple H3K9me2/hpl2/lin61 combinations or just H3K9me2/hpl2 combinations, plotted for all genes or only significantly up/down regulated autosomal arm genes. (./custom/exploreChIP/bedPeakTypeOverlap_barplot.pdf)
+
+***deeptools_sigGenes_v_ChIP.sh*** produces:
+- deeptools heatmaps+profiles for ChIPseq of all histone marks over gene bodies +- 1kb 
+for significantly up/down regulated genes in all four mutant contrasts. (./custom/exploreChIP/\*publicChIPseq_heatmap_sort\*.pdf)
+
+
+
 ## Final figures
 
 Scripts in ./scripts_finalFigures/ folder
