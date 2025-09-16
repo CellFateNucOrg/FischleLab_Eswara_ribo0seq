@@ -73,3 +73,9 @@ Only Dimerisation, Only LLPS, No LLPS No Dimerization and Double mutant compared
 
 output is all in ./custom/finalFigures/upregulatedOnArms/
 
+***integrationWithChIP.R*** produces:
+- euler plot for overlap between genes with peaks in different ChIP seq datasets (lfcByGroup_autosomalArmTripleChIPpeaks_padj0.05_lfc0.5.pdf)
+- boxplot of LFC expression for core triple-peak genes in each mutant RNAseq (lfcByGroup_autosomalArmTripleChIPpeaks_padj0.05_lfc0.5.pdf)
+- same as above but with ChIP seq signal stratified into three quantiles (Q1 lowwest-Q3 highest) (lfcByGroup_autosomalArmTripleChIPpeaks_padj0.05_lfc0.5_quantile.pdf)
+
+output is all in ./custom/finalFigures/integrationWithChIP/
