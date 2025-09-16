@@ -161,6 +161,7 @@ beddf<-data.frame(bedFiles=paste0(workDir,"/../GSE271919_ChIPseq/bed/",bedFiles[
 
 ### all genes
 results<-readRDS(paste0(workDir,runName,"/custom/rds/",prefix,".results_annotated.RDS"))
+results$padj[is.na(results$padj)]<-1
 results$longId<-droplevels(results$group)
 results$shortId<-droplevels(results$shortId)
 results$group<-factor(results$shortId,levels=contrasts$shortId,labels=contrasts$prettyName)

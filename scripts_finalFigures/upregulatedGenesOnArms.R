@@ -55,14 +55,13 @@ prefix="ribo0_canonical_geneset_all"
 
 setwd(workDir)
 
-dir.create(paste0(workDir,runName,"/custom/finalFigures"), showWarnings = FALSE, recursive = TRUE)
+dir.create(paste0(workDir,runName,"/custom/finalFigures/upregulatedOnArms"), showWarnings = FALSE, recursive = TRUE)
 
 
 
 ## subset data -------
 results<-readRDS(paste0(workDir,runName,"/custom/rds/",prefix,".results_annotated.RDS"))
 results$padj[is.na(results$padj)]<-1
-dir.create(paste0(workDir,runName,"/custom/finalFigures/upregulatedOnArms"), showWarnings = FALSE, recursive = TRUE)
 rockman<-readRDS(paste0(serverPath,"/publicData/Various/chrRegions_Rockman2009.RDS"))
 gr<-tableToGranges(results,sort=FALSE)
 seqlevelsStyle(gr)<-"UCSC"
@@ -70,6 +69,8 @@ ol<-findOverlaps(resize(gr,width=1,fix="start"),rockman,ignore.strand=T)
 gr$chrRegionType[queryHits(ol)] <- paste0(rockman$chrRegionType[subjectHits(ol)])
 gr$chrRegion[queryHits(ol)] <- paste0(seqnames(rockman)[subjectHits(ol)],"_",rockman$chrRegionType[subjectHits(ol)])
 res<-as.data.frame(gr)
+res<-res[res$seqnames != "chrM",]
+saveRDS(res,paste0(workDir,runName,"/custom/rds/",prefix,"_regionType.results_annotated.RDS"))
 contrasts
 
 lfcVal=0.5
@@ -301,7 +302,7 @@ ggsave(paste0(workDir, runName, "/custom/finalFigures/upregulatedOnArms/venn_4wa
 
 
 
-### 3-way combinations
+### 2-way combinations
 lin61groups<-combn(colnames(binMat),2)
 lin61groups
 colors <- brewer.pal(4, "Accent")
